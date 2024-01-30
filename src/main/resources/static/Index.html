@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management System</title>
+</head>
+<body>
+<h1>Task Management System</h1>
+
+<form id="createTaskForm">
+    <label for="title">Title:</label>
+    <input type="text" id="title" name="title" required>
+    <label for="description">Description:</label>
+    <input type="text" id="description" name="description" required>
+    <label for="dueDate">Due Date:</label>
+    <input type="date" id="dueDate" name="dueDate" required>
+    <button type="button" onclick="createTask()">Create Task</button>
+</form>
+
+<h2>Existing Tasks:</h2>
+<ul id="taskList"></ul>
+
+<script>
+    // Function to make AJAX request and create a new task
+    function renderTask(task) {
+        const listItem = document.createElement('li');
+
+        listItem.innerHTML = `
+
+             <strong>Title:</strong> ${task.title}
+            [<button onclick="updateTask(${task.id})">Update</button>]
+            [<button onclick="deleteTask(${task.id})">Delete</button>]<br>
+            <strong>Description:</strong> ${task.description}<br>
+            <strong>Due Date:</strong> ${task.dueDate}<br>
+        `;
+
+        return listItem;
+    }
+    function createTask() {
+        const title = document.getElementById('title').value;
+        const description = document.getElementById('description').value;
+        const dueDate = document.getElementById('dueDate').value;
+
+        // Make AJAX request to create a new task
+        fetch('http://localhost:8080/tasks/createTask', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: title,
+                description: description,
+                dueDate: dueDate,
+            }),
+        })
+            .then(response => response.json())
+            .then(createdTask => {
+                // Update the taskList with the new task
+                updateTaskList();
+            })
+            .catch(error => {
+                console.error('Error creating task:', error);
+            });
+    }
+
+    // Function to make AJAX request and get all tasks
+    function updateTask(id) {
+        // Prompt the user for updated task details (you can use a modal or a simple prompt)
+        const updatedTitle = prompt('Enter updated title:');
+        const updatedDescription = prompt('Enter updated description:');
+        const updatedDueDate = prompt('Enter updated due date (YYYY-MM-DD):');
+
+        // Make AJAX request to update the task
+        fetch(`http://localhost:8080/tasks/updateTask/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: updatedTitle,
+                description: updatedDescription,
+                dueDate: updatedDueDate,
+            }),
+        })
+            .then(response => response.json())
+            .then(updatedTask => {
+                // Update the taskList with the updated task
+                updateTaskList();
+            })
+            .catch(error => {
+                console.error('Error updating task:', error);
+            });
+    }
+
+    function deleteTask(id) {
+        // Confirm with the user before deleting
+        const confirmDelete = confirm('Are you sure you want to delete this task?');
+
+        if (confirmDelete) {
+            // Make AJAX request to delete the task
+            fetch(`http://localhost:8080/tasks/deleteTask/${id}`, {
+                method: 'DELETE',
+            })
+                .then(() => {
+                    // Update the taskList after deletion
+                    updateTaskList();
+                })
+                .catch(error => {
+                    console.error('Error deleting task:', error);
+                });
+        }
+    }
+    function getAllTasks() {
+        fetch('http://localhost:8080/tasks/getAllTasks')
+            .then(response => response.json())
+            .then(tasks => {
+                // Update the taskList with the received tasks
+                const taskList = document.getElementById('taskList');
+                taskList.innerHTML = '';
+
+                tasks.forEach(task => {
+                    taskList.appendChild(renderTask(task));
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching tasks:', error);
+            });
+
+    }
+    function updateTaskList() {
+        getAllTasks();
+    }
+
+    // Call getAllTasks on page load
+    getAllTasks();
+</script>
+</body>
+</html>
